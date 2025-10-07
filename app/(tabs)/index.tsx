@@ -1,98 +1,360 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import React, { useState } from 'react'; 
+import { View, Text, SafeAreaView, StyleSheet, FlatList, TouchableOpacity, Modal, TextInput, Alert } from 'react-native';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+// This function helps us  with the status colors
+const getStatusColor = (status) => {
+  switch(status) {
+    case 'Created': return 'blue';
+    case 'Under Assistance': return 'orange';
+    case 'Completed': return 'green';
+    default: return 'gray';
+  }
+};
 
-export default function HomeScreen() {
+// a mittleComponent to display individual ticket details
+const TicketItem = ({ ticket }) => {
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+    <View style={styles.ticketItem}>
+      <Text style={styles.ticketTitle}>{ticket.title}</Text>
+      <Text style={styles.ticketDescription}>{ticket.description}</Text>
+      <Text style={[
+        styles.ticketStatus,
+        { color: getStatusColor(ticket.status) }
+      ]}>
+        {ticket.status}
+      </Text>
+    </View>
+  );
+};
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+// Main component for the Ticket Tracker screen
+export default function TicketTracker() {
+  
+  // State to store array of tickets
+  const [tickets, setTickets] = useState([
+    {
+      id: 1,
+      title: "Login not working",
+      description: "Users can't log in to their accounts",
+      status: "Created",
+      rating: null
+    },
+    {
+      id: 2,
+      title: "Slow page loading",
+      description: "App takes too long to load the dashboard",
+      status: "Under Assistance",
+      rating: null
+    },
+    {
+      id: 3,
+      title: "Crash on startup",
+      description: "App crashes immediately after opening",
+      status: "Completed",
+      rating: 4
+    },
+    {
+      id: 4,
+      title: "Slowww and buggy",
+      description: "The App is very slow and buggy",
+      status: "Under Assistance",
+      rating: null
+    }   
+  ]);
+
+  // Modal states - INSIDE the component
+  const [modalVisible, setModalVisible] = useState(false);
+  const [newTicketTitle, setNewTicketTitle] = useState('');
+  const [newTicketDescription, setNewTicketDescription] = useState('');
+  const [newTicketStatus, setNewTicketStatus] = useState('Created');
+
+  // Add ticket handler function
+  const handleAddTicket = () => {
+    if (!newTicketTitle.trim()) {
+      Alert.alert('Error', 'Please enter a ticket title');
+      return;
+    }
+
+    const newTicket = {
+      id: tickets.length + 1,
+      title: newTicketTitle,
+      description: newTicketDescription,
+      status: newTicketStatus,
+      rating: null
+    };
+
+    setTickets([...tickets, newTicket]);
+    setModalVisible(false);
+    setNewTicketTitle('');
+    setNewTicketDescription('');
+    setNewTicketStatus('Created');
+    
+    Alert.alert('Success', 'Ticket added successfully!');
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.title}>Ticket Tracker</Text>
+      </View>
+      
+      {/* Content area with ticket list */}
+      <View style={styles.content}>
+        <FlatList
+          data={tickets}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={({ item }) => <TicketItem ticket={item} />}
+        />
+      </View>
+      
+      {/* Add Ticket Button */}
+      <TouchableOpacity 
+        style={styles.addButton}
+        onPress={() => setModalVisible(true)}
+      >
+        <Text style={styles.addButtonText}>+</Text>
+      </TouchableOpacity>
+      
+      {/* Modal for adding new tickets */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Add New Ticket</Text>
+            
+            <TextInput
+              style={styles.input}
+              placeholder="Ticket Title"
+              value={newTicketTitle}
+              onChangeText={setNewTicketTitle}
+            />
+            
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              placeholder="Description"
+              value={newTicketDescription}
+              onChangeText={setNewTicketDescription}
+              multiline
+              numberOfLines={4}
+            />
+            
+            {/* Status Selector */}
+            <Text style={styles.label}>Status:</Text>
+            <View style={styles.statusContainer}>
+              {['Created', 'Under Assistance', 'Completed'].map((status) => (
+                <TouchableOpacity
+                  key={status}
+                  style={[
+                    styles.statusOption,
+                    newTicketStatus === status && styles.selectedStatus
+                  ]}
+                  onPress={() => setNewTicketStatus(status)}
+                >
+                  <Text style={[
+                    styles.statusText,
+                    newTicketStatus === status && styles.selectedStatusText
+                  ]}>
+                    {status}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            
+            {/* Modal Buttons */}
+            <View style={styles.modalButtons}>
+              <TouchableOpacity 
+                style={[styles.button, styles.cancelButton]}
+                onPress={() => {
+                  setModalVisible(false);
+                  setNewTicketTitle('');
+                  setNewTicketDescription('');
+                  setNewTicketStatus('Created');
+                }}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.button, styles.submitButton]}
+                onPress={handleAddTicket}
+              >
+                <Text style={styles.submitButtonText}>Add Ticket</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+      
+    </SafeAreaView>
   );
 }
 
+// Styles for the component
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
+  container: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+  },
+  header: {
+    backgroundColor: '#007AFF',
+    padding: 20,
     alignItems: 'center',
-    gap: 8,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
+  content: {
+    flex: 1,
+    padding: 20,
+  },
+  ticketItem: {
+    backgroundColor: 'white',
+    padding: 15,
+    marginVertical: 5,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  ticketTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  ticketDescription: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 5,
+  },
+  ticketStatus: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  
+  // Add Button Styles
+  addButton: {
     position: 'absolute',
+    bottom: 30,
+    right: 30,
+    width: 60,
+    height: 60,
+    backgroundColor: '#007AFF',
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+  },
+  addButtonText: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+
+  // Modal Styles
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 20,
+    width: '90%',
+    maxHeight: '80%',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#DDD',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 15,
+    fontSize: 16,
+  },
+  textArea: {
+    height: 100,
+    textAlignVertical: 'top',
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 10,
+    color: '#333',
+  },
+
+  // Status Selector Styles
+  statusContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  statusOption: {
+    flex: 1,
+    padding: 10,
+    marginHorizontal: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#DDD',
+    alignItems: 'center',
+  },
+  selectedStatus: {
+    backgroundColor: '#007AFF',
+    borderColor: '#007AFF',
+  },
+  statusText: {
+    fontSize: 14,
+    color: '#666',
+  },
+  selectedStatusText: {
+    color: '#FFF',
+    fontWeight: '600',
+  },
+
+  // Modal Buttons
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  button: {
+    flex: 1,
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginHorizontal: 5,
+  },
+  cancelButton: {
+    backgroundColor: '#F2F2F7',
+  },
+  submitButton: {
+    backgroundColor: '#007AFF',
+  },
+  cancelButtonText: {
+    color: '#666',
+    fontWeight: '600',
+  },
+  submitButtonText: {
+    color: '#FFF',
+    fontWeight: '600',
   },
 });
