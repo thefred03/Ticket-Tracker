@@ -1,35 +1,67 @@
+// Import necessary components from React Native
 import React, { useState } from 'react'; 
 import { View, Text, SafeAreaView, StyleSheet, FlatList, TouchableOpacity, Modal, TextInput, Alert } from 'react-native';
 
-// This function helps us  with the status colors
+// Helper function for status colors
 const getStatusColor = (status) => {
   switch(status) {
-    case 'Created': return 'blue';
-    case 'Under Assistance': return 'orange';
-    case 'Completed': return 'green';
-    default: return 'gray';
+    case 'Created': return '#007AFF';
+    case 'Under Assistance': return '#FF9500';
+    case 'Completed': return '#34C759';
+    default: return '#8E8E93';
   }
 };
 
-// a mittleComponent to display individual ticket details
-const TicketItem = ({ ticket }) => {
+const getStatusBackground = (status) => {
+  switch(status) {
+    case 'Created': return '#E3F2FD';
+    case 'Under Assistance': return '#FFF3E0';
+    case 'Completed': return '#E8F5E8';
+    default: return '#F2F2F7';
+  }
+};
+
+// Component to display individual ticket details
+const TicketItem = ({ ticket, onEdit, onDelete }) => {
   return (
     <View style={styles.ticketItem}>
-      <Text style={styles.ticketTitle}>{ticket.title}</Text>
+      {/* Task 2.4: Enhanced Status Display */}
+      <View style={styles.ticketHeader}>
+        <Text style={styles.ticketTitle}>{ticket.title}</Text>
+        <View style={[
+          styles.statusBadge,
+          { backgroundColor: getStatusBackground(ticket.status) }
+        ]}>
+          <Text style={[styles.ticketStatus, { color: getStatusColor(ticket.status) }]}>
+            {ticket.status}
+          </Text>
+        </View>
+      </View>
+      
       <Text style={styles.ticketDescription}>{ticket.description}</Text>
-      <Text style={[
-        styles.ticketStatus,
-        { color: getStatusColor(ticket.status) }
-      ]}>
-        {ticket.status}
-      </Text>
+      
+      {/* Task 2.5: Edit/Delete UI */}
+      <View style={styles.ticketActions}>
+        <TouchableOpacity 
+          style={styles.actionButton}
+          onPress={() => onEdit(ticket)}
+        >
+          <Text style={styles.editText}>Edit</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.actionButton}
+          onPress={() => onDelete(ticket.id)}
+        >
+          <Text style={styles.deleteText}>Delete</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
 
 // Main component for the Ticket Tracker screen
 export default function TicketTracker() {
-  
   // State to store array of tickets
   const [tickets, setTickets] = useState([
     {
@@ -62,7 +94,7 @@ export default function TicketTracker() {
     }   
   ]);
 
-  // Modal states - INSIDE the component
+  // Modal states
   const [modalVisible, setModalVisible] = useState(false);
   const [newTicketTitle, setNewTicketTitle] = useState('');
   const [newTicketDescription, setNewTicketDescription] = useState('');
@@ -92,9 +124,32 @@ export default function TicketTracker() {
     Alert.alert('Success', 'Ticket added successfully!');
   };
 
+  // Edit ticket handler
+  const handleEditTicket = (ticket) => {
+    Alert.alert('Edit Feature', `Would edit ticket: ${ticket.title}`);
+  };
+
+  // Delete ticket handler
+  const handleDeleteTicket = (ticketId) => {
+    Alert.alert(
+      'Delete Ticket',
+      'Are you sure you want to delete this ticket?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Delete', 
+          style: 'destructive',
+          onPress: () => {
+            setTickets(tickets.filter(ticket => ticket.id !== ticketId));
+            Alert.alert('Success', 'Ticket deleted successfully!');
+          }
+        }
+      ]
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
-      
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>Ticket Tracker</Text>
@@ -105,7 +160,13 @@ export default function TicketTracker() {
         <FlatList
           data={tickets}
           keyExtractor={(item) => item.id.toString()}
-          renderItem={({ item }) => <TicketItem ticket={item} />}
+          renderItem={({ item }) => (
+            <TicketItem 
+              ticket={item} 
+              onEdit={handleEditTicket}
+              onDelete={handleDeleteTicket}
+            />
+          )}
         />
       </View>
       
@@ -190,7 +251,6 @@ export default function TicketTracker() {
           </View>
         </View>
       </Modal>
-      
     </SafeAreaView>
   );
 }
@@ -215,6 +275,8 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
   },
+  
+  // Ticket Item Styles
   ticketItem: {
     backgroundColor: 'white',
     padding: 15,
@@ -226,18 +288,53 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
   },
+  ticketHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
   ticketTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 5,
+    flex: 1,
+    marginRight: 10,
   },
   ticketDescription: {
     fontSize: 14,
     color: '#666',
     marginBottom: 5,
   },
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
   ticketStatus: {
     fontSize: 12,
+    fontWeight: '600',
+  },
+  
+  // Task 2.5: Edit/Delete Actions
+  ticketActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
+    paddingTop: 10,
+  },
+  actionButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginLeft: 10,
+  },
+  editText: {
+    color: '#007AFF',
+    fontWeight: '600',
+  },
+  deleteText: {
+    color: '#FF3B30',
     fontWeight: '600',
   },
   
